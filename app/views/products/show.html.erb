@@ -15,6 +15,7 @@
         <h1 class="text-2xl font-bold tracking-tight text-slate-900 mt-1">
           <%= @product.name %>
           <%= @product.description %>
+          <%= image_tag @product.featured_image if @product.featured_image.attached? %>
         </h1>
       </div>
 
