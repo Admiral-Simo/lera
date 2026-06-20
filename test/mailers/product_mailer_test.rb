@@ -9,4 +9,3 @@ class ProductMailerTest < ActionMailer::TestCase
     assert_match "Good news!", mail.body.encoded
   end
 end
-
