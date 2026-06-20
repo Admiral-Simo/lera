@@ -1,0 +1,42 @@
+<div class="flex min-h-[calc(100vh-12rem)] flex-col justify-center py-12 sm:px-6 lg:px-8">
+  <div class="sm:mx-auto w-full sm:max-w-md">
+    <h2 class="text-center text-3xl font-bold tracking-tight text-slate-900">Create your account</h2>
+    <p class="mt-2 text-center text-sm text-slate-600">
+      Already have an account?
+      <%= link_to "Sign in", new_session_path, class: "font-medium text-blue-600 hover:text-blue-500 transition underline-offset-4 hover:underline" %>
+    </p>
+  </div>
+
+  <div class="mt-8 sm:mx-auto w-full sm:max-w-md">
+    <div class="bg-white px-4 py-8 shadow-md rounded-xl border border-slate-100 sm:px-10">
+
+      <%= form_with model: @user, url: registration_path, class: "space-y-5" do |form| %>
+        <% if @user.errors.any? %>
+          <div class="p-3 rounded-lg bg-red-50 border border-red-200 text-xs font-medium text-red-800">
+            <%= @user.errors.full_messages.first %>
+          </div>
+        <% end %>
+
+        <div class="flex flex-col gap-1.5">
+          <%= form.label :email_address, class: "text-sm font-semibold text-slate-700" %>
+          <%= form.email_field :email_address, required: true, placeholder: "you@example.com", class: "block w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-sm" %>
+        </div>
+
+        <div class="flex flex-col gap-1.5">
+          <%= form.label :password, class: "text-sm font-semibold text-slate-700" %>
+          <%= form.password_field :password, required: true, placeholder: "Minimum 8 characters", class: "block w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-sm" %>
+        </div>
+
+        <div class="flex flex-col gap-1.5">
+          <%= form.label :password_confirmation, "Confirm Password", class: "text-sm font-semibold text-slate-700" %>
+          <%= form.password_field :password_confirmation, required: true, placeholder: "Repeat password", class: "block w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-sm" %>
+        </div>
+
+        <div class="pt-2">
+          <%= form.submit "Get Started", class: "w-full cursor-pointer justify-center rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600 active:bg-blue-700" %>
+        </div>
+      <% end %>
+
+    </div>
+  </div>
+</div>

@@ -11,5 +11,8 @@ Rails.application.routes.draw do
 
   # Defines the root path route ("/")
   root "products#index"
+  resource :session
+  resources :passwords, param: :token
+  resource :registration, only: [:new, :create]
   resources :products
 end
