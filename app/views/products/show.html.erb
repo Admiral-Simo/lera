@@ -1,7 +1,7 @@
-<div class="max-w-md mx-auto mt-8 px-4">
-  <div class="mb-4">
-    <%= link_to products_path, class: "inline-flex items-center gap-1 text-sm font-medium text-slate-500 hover:text-slate-700 transition" do %>
-      <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+<div class="max-w-2xl mx-auto mt-8 px-4">
+  <div class="mb-5">
+    <%= link_to products_path, class: "inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors" do %>
+      <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
       </svg>
       Back to products
@@ -9,29 +9,41 @@
   </div>
 
   <% cache [@product, authenticated?] do %>
-    <div class="bg-white rounded-xl shadow-md border border-slate-100 p-6 space-y-6">
-      <div>
-        <span class="text-xs font-semibold uppercase tracking-wider text-blue-600">Product Details</span>
-        <h1 class="text-2xl font-bold tracking-tight text-slate-900 mt-1">
-          <%= @product.name %>
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
+
+      <div class="p-6 sm:p-8 space-y-6">
+        <div>
+          <span class="text-xs font-bold uppercase tracking-widest text-blue-600">Product Details</span>
+          <h1 class="text-3xl font-extrabold tracking-tight text-slate-900 mt-1.5">
+            <%= @product.name %>
+          </h1>
+        </div>
+
+        <% if @product.respond_to?(:featured_image) && @product.featured_image.attached? %>
+          <div class="rounded-xl overflow-hidden border border-slate-100 bg-slate-50">
+            <%= image_tag @product.featured_image, class: "w-full h-auto object-cover max-h-96" %>
+          </div>
+        <% end %>
+
+        <div class="prose prose-slate max-w-none text-slate-700 leading-relaxed">
           <%= @product.description %>
-          <%= image_tag @product.featured_image if @product.featured_image.attached? %>
-        </h1>
+        </div>
       </div>
 
       <% if authenticated? %>
-        <div class="border-t border-slate-100 pt-4">
-          <div class="flex gap-3">
-            <%= link_to edit_product_path(@product), class: "flex-1 inline-flex justify-center items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition duration-150 ease-in-out hover:bg-blue-500" do %>
+        <div class="bg-slate-50/70 border-t border-slate-100 px-6 py-4 sm:px-8">
+          <div class="flex flex-col sm:flex-row gap-3 justify-end">
+            <%= link_to edit_product_path(@product), class: "inline-flex justify-center items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-blue-500/10 hover:bg-blue-500 transition active:scale-[0.98]" do %>
               Edit Product
             <% end %>
 
-            <%= button_to @product, method: :delete, data: { turbo_confirm: "Are you sure?" }, class: "flex-1 cursor-pointer inline-flex justify-center items-center gap-2 rounded-lg bg-red-50 border border-red-200 px-4 py-2.5 text-sm font-semibold text-red-600 transition" do %>
+            <%= button_to @product, method: :delete, data: { turbo_confirm: "Are you sure?" }, class: "w-full sm:w-auto cursor-pointer inline-flex justify-center items-center gap-2 rounded-xl bg-white border border-red-200 px-5 py-2.5 text-sm font-semibold text-red-600 shadow-sm hover:bg-red-50 hover:border-red-300 transition active:scale-[0.98]" do %>
               Delete
             <% end %>
           </div>
         </div>
       <% end %>
+
     </div>
   <% end %>
 </div>
