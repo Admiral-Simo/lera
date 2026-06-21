@@ -1,11 +1,19 @@
 <div style="max-width: 1400px; margin: 40px auto; font-family: system-ui, sans-serif; padding: 0 20px;">
   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
     <h2>🏨 Front Desk Check-In Hub</h2>
-    <div style="background: #e8f0fe; color: #1a73e8; padding: 8px 16px; border-radius: 20px; font-size: 14px; font-weight: bold;">
-      Active Dashboard Context
-    </div>
+
+    <% if current_user %>
+      <div style="background: #e6f4ea; color: #137333; padding: 8px 16px; border-radius: 20px; font-size: 14px; font-weight: bold; display: flex; align-items: center; gap: 6px;">
+        🟢 Secure Session: <%= current_user.email_address %>
+      </div>
+    <% else %>
+      <%= button_to "/auth/google_oauth2", method: :post, data: { turbo: false }, style: "background: #fff; color: #3c4043; border: 1px solid #dadce0; padding: 8px 16px; border-radius: 4px; font-size: 14px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 1px 2px rgba(60,64,67,0.3);" do %>
+        <img src="https://fonts.gstatic.com/s/i/productlogos/googleg/v6/web-24dp/copy_lt_2x.png" width="16" alt="Google">
+        Authorize Terminal via Google
+      <% end %>
+    <% end %>
   </div>
-  <hr style="border: nil; border-top: 1px solid #eee; margin-bottom: 30px;">
+  <hr style="border: none; border-top: 1px solid #eee; margin-bottom: 30px;">
 
   <div id="flash-messages">
     <%= render partial: "passports/flashes" %>
@@ -18,34 +26,42 @@
         <h3 style="margin-top:0;">Scan Arrival</h3>
         <p style="color: #6c757d; font-size: 13px; line-height: 1.4; margin-bottom: 20px;">Stream capture details via live video shutter or upload a compressed file asset.</p>
 
-        <div style="margin-bottom: 20px;">
-          <button id="start-camera-btn" type="button" onclick="initiateWebcam()" style="background: #212529; color: white; border: none; padding: 10px 14px; font-weight: bold; border-radius: 4px; cursor: pointer; font-size: 13px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;">
-            📷 Open Live Video Scanner
-          </button>
+        <% if current_user %>
+          <div style="margin-bottom: 20px;">
+            <button id="start-camera-btn" type="button" onclick="initiateWebcam()" style="background: #212529; color: white; border: none; padding: 10px 14px; font-weight: bold; border-radius: 4px; cursor: pointer; font-size: 13px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;">
+              📷 Open Live Video Scanner
+            </button>
 
-          <div id="camera-container" style="display: none; margin-top: 15px; position: relative; border-radius: 6px; overflow: hidden; background: #000; border: 2px solid #1a73e8;">
-            <video id="webcam-feed" autoplay playsinline style="width: 100%; display: block;"></video>
+            <div id="camera-container" style="display: none; margin-top: 15px; position: relative; border-radius: 6px; overflow: hidden; background: #000; border: 2px solid #1a73e8;">
+              <video id="webcam-feed" autoplay playsinline style="width: 100%; display: block;"></video>
 
-            <div style="position: absolute; bottom: 10%; left: 5%; right: 5%; height: 25%; border: 2px dashed #0d6efd; background: rgba(13, 110, 253, 0.15); border-radius: 4px; pointer-events: none; display: flex; align-items: center; justify-content: center;">
-              <span style="color: white; font-size: 11px; font-weight: bold; text-shadow: 0 1px 3px rgba(0,0,0,0.8); background: rgba(0,0,0,0.5); padding: 2px 6px; border-radius: 3px;">ALIGN MRZ TEXT HERE</span>
+              <div style="position: absolute; bottom: 10%; left: 5%; right: 5%; height: 25%; border: 2px dashed #0d6efd; background: rgba(13, 110, 253, 0.15); border-radius: 4px; pointer-events: none; display: flex; align-items: center; justify-content: center;">
+                <span style="color: white; font-size: 11px; font-weight: bold; text-shadow: 0 1px 3px rgba(0,0,0,0.8); background: rgba(0,0,0,0.5); padding: 2px 6px; border-radius: 3px;">ALIGN MRZ TEXT HERE</span>
+              </div>
+
+              <button id="shutter-btn" type="button" onclick="captureSnapshot()" style="position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%); background: #c5221f; color: white; border: 4px solid white; width: 54px; height: 54px; border-radius: 50%; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3);" title="Take Photo"></button>
             </div>
-
-            <button id="shutter-btn" type="button" onclick="captureSnapshot()" style="position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%); background: #c5221f; color: white; border: 4px solid white; width: 54px; height: 54px; border-radius: 50%; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3);" title="Take Photo"></button>
+            <canvas id="snapshot-canvas" style="display: none;"></canvas>
           </div>
-          <canvas id="snapshot-canvas" style="display: none;"></canvas>
-        </div>
 
-        <div style="text-align: center; color: #adb5bd; font-size: 11px; font-weight: bold; margin: 15px 0; text-transform: uppercase; letter-spacing: 0.5px;">— OR —</div>
+          <div style="text-align: center; color: #adb5bd; font-size: 11px; font-weight: bold; margin: 15px 0; text-transform: uppercase; letter-spacing: 0.5px;">— OR —</div>
 
-        <%= form_with scope: :passport, url: passports_path, local: true, multipart: true,
-                      html: {
-                        onsubmit: "document.getElementById('loading-state').style.display = 'block';",
-                        id: "passport-form"
-                      } do |f| %>
-          <div style="margin-bottom: 16px;">
-            <%= f.file_field :image, id: "file-input-field", accept: 'image/*', style: "display: block; width: 100%; box-sizing: border-box; padding: 12px; background: white; border: 1px dashed #ced4da; border-radius: 4px;" %>
+          <%= form_with scope: :passport, url: passports_path, local: true, multipart: true,
+                        html: {
+                          onsubmit: "document.getElementById('loading-state').style.display = 'block';",
+                          id: "passport-form"
+                        } do |f| %>
+            <div style="margin-bottom: 16px;">
+              <%= f.file_field :image, id: "file-input-field", accept: 'image/*', style: "display: block; width: 100%; box-sizing: border-box; padding: 12px; background: white; border: 1px dashed #ced4da; border-radius: 4px;" %>
+            </div>
+            <%= f.submit "Extract & Register Guest", style: "background: #1a73e8; color: white; border: none; padding: 12px 20px; font-weight: bold; border-radius: 4px; cursor: pointer; width: 100%; font-size: 14px;" %>
+          <% end %>
+        <% else %>
+          <div style="text-align: center; padding: 30px 10px; border: 2px dashed #dadce0; border-radius: 6px; background: #fafafa;">
+            <div style="font-size: 24px; margin-bottom: 10px;">🔒</div>
+            <h4 style="margin: 0 0 8px 0; color: #3c4043;">Scanner Locked</h4>
+            <p style="margin: 0; font-size: 12px; color: #5f6368; line-height: 1.4;">Authorize via Google above to activate the live terminal OCR environment.</p>
           </div>
-          <%= f.submit "Extract & Register Guest", style: "background: #1a73e8; color: white; border: none; padding: 12px 20px; font-weight: bold; border-radius: 4px; cursor: pointer; width: 100%; font-size: 14px;" %>
         <% end %>
 
         <div id="loading-state" style="display: none; margin-top: 20px; text-align: center; color: #1a73e8; font-weight: bold; font-size: 13px;">
@@ -90,15 +106,19 @@
     }
   }
 
-  function stopWebcam() {
+  def stopWebcam() {
     if (videoStream) {
       videoStream.getTracks().forEach(track => track.stop());
       videoStream = null;
     }
-    document.getElementById('camera-container').style.display = 'none';
+    if (document.getElementById('camera-container')) {
+      document.getElementById('camera-container').style.display = 'none';
+    }
     const btn = document.getElementById('start-camera-btn');
-    btn.textContent = "📷 Open Live Video Scanner";
-    btn.style.background = "#212529";
+    if (btn) {
+      btn.textContent = "📷 Open Live Video Scanner";
+      btn.style.background = "#212529";
+    }
   }
 
   function captureSnapshot() {
@@ -108,11 +128,9 @@
     const form = document.getElementById('passport-form');
     const context = canvas.getContext('2d');
 
-    // Set canvas matching video stream width/height natively
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
 
-    // 🚀 CLEAN AND RAW: Draw image cleanly 1-to-1 without mirroring math distortions
     context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
     canvas.toBlob((blob) => {
@@ -131,7 +149,9 @@
 
   document.addEventListener("turbo:submit-end", function(event) {
     if (event.target.id === "passport-form") {
-      document.getElementById('loading-state').style.display = 'none';
+      if (document.getElementById('loading-state')) {
+        document.getElementById('loading-state').style.display = 'none';
+      }
       event.target.reset();
     }
   });
