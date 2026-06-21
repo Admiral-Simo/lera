@@ -6,14 +6,19 @@ class Rack::Attack
   Rack::Attack.cache.store = ActiveSupport::Cache::MemoryStore.new
 
   ### Throttle Passport Scanning Endpoint ###
-  # Allow 5 requests per minute per User (or IP if unauthenticated)
-  throttle("passports/create", limit: 5, period: 1.minute) do |req|
+  # Allow 2 requests per minute per User (or IP if unauthenticated)
+  throttle("passports/create", limit: 2, period: 1.minute) do |req|
     if req.path == "/passports" && req.post?
-      # Try to identify user via session cookie if available, otherwise fall back to IP
-      # Note: Adjust cookie key name based on your Rails 8 configuration
-      cookies = ActionDispatch::Cookies::CookieJar.build(req, req.cookies)
-      session_id = cookies.signed[:session_id]
+      # 1. Look for the raw signed session cookie string directly from the Rack env headers
+      cookie_header = req.env["HTTP_COOKIE"]
 
+      if cookie_header
+        # 2. Extract the 'session_id' value using a regular expression regex match
+        match = cookie_header.match(/session_id=([^;]+)/)
+        session_id = match[1] if match
+      end
+
+      # 3. Fall back gracefully to the standard IP address if no session cookie exists yet
       session_id ? "user_session_#{session_id}" : req.ip
     end
   end
