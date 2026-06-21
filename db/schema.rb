@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_21_123537) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_21_141659) do
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.text "body"
     t.datetime "created_at", null: false
@@ -54,6 +54,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_21_123537) do
     t.datetime "checked_in_at"
     t.datetime "created_at", null: false
     t.string "document_number"
+    t.string "document_type"
     t.date "expiry_date"
     t.string "first_names"
     t.string "issuing_state"

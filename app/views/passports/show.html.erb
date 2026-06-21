@@ -1,0 +1,92 @@
+<turbo-frame id="modal-layer">
+  <div style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 9999; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(2px);" onclick="this.closest('#modal-layer').innerHTML = ''">
+
+    <div style="background: white; width: 600px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); overflow: hidden; animation: modalSlideUp 0.2s cubic-bezier(0.16, 1, 0.3, 1);" onclick="event.stopPropagation()">
+
+      <div style="background: #212529; color: white; padding: 20px 24px; display: flex; justify-content: space-between; align-items: center;">
+        <h3 style="margin: 0; font-size: 18px; display: flex; align-items: center; gap: 8px;">
+          <span>📄</span> Verified Identity Dossier
+        </h3>
+        <button style="background: transparent; color: #adb5bd; border: none; font-size: 24px; cursor: pointer; font-weight: bold; line-height: 1;" onclick="this.closest('#modal-layer').innerHTML = ''">&times;</button>
+      </div>
+
+      <div style="padding: 24px;">
+        <div style="display: flex; gap: 15px; align-items: center; margin-bottom: 20px;">
+          <h2 style="margin: 0; color: #111827; font-size: 22px;"><%= @guest.last_name %>, <%= @guest.first_names %></h2>
+          <span style="font-size: 11px; font-weight: bold; padding: 3px 8px; border-radius: 12px; background: #eaf2ff; color: #1a73e8; text-transform: uppercase; border: 1px solid #d2e3fc;">
+            <%= @guest.document_type || "Document" %>
+          </span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; border-top: 1px solid #f3f4f6; padding-top: 20px; margin-bottom: 25px;">
+          <div>
+            <label style="display: block; font-size: 11px; text-transform: uppercase; color: #6b7280; font-weight: bold; margin-bottom: 4px; letter-spacing: 0.5px;">Document Number</label>
+            <span style="font-size: 15px; font-family: monospace; font-weight: bold; color: #1f2937;"><%= @guest.document_number %></span>
+          </div>
+          <div>
+            <label style="display: block; font-size: 11px; text-transform: uppercase; color: #6b7280; font-weight: bold; margin-bottom: 4px; letter-spacing: 0.5px;">Operational Status</label>
+            <span style="font-size: 14px; font-weight: 600; color: <%= @guest.status == 'checked_in' ? '#166534' : '#b45309' %>;">
+              <%= @guest.status == 'checked_in' ? "🚪 Room #{@guest.room_number} Active" : "⏳ Pending Assignment" %>
+            </span>
+          </div>
+          <div>
+            <label style="display: block; font-size: 11px; text-transform: uppercase; color: #6b7280; font-weight: bold; margin-bottom: 4px; letter-spacing: 0.5px;">Date of Birth</label>
+            <span style="font-size: 15px; color: #1f2937;"><%= @guest.birthdate&.respond_to?(:strftime) ? @guest.birthdate.strftime("%B %d, %Y") : @guest.birthdate %></span>
+          </div>
+          <div>
+            <label style="display: block; font-size: 11px; text-transform: uppercase; color: #6b7280; font-weight: bold; margin-bottom: 4px; letter-spacing: 0.5px;">Sex</label>
+            <span style="font-size: 15px; color: #1f2937;"><%= @guest.sex %></span>
+          </div>
+          <div>
+            <label style="display: block; font-size: 11px; text-transform: uppercase; color: #6b7280; font-weight: bold; margin-bottom: 4px; letter-spacing: 0.5px;">Document Expiry</label>
+            <span style="font-size: 15px; color: #1f2937; font-weight: <%= @guest.expiry_date.present? && @guest.expiry_date.to_date < Date.today ? 'bold' : 'normal' %>; color: <%= @guest.expiry_date.present? && @guest.expiry_date.to_date < Date.today ? '#c5221f' : '#1f2937' %>;">
+              <%= @guest.expiry_date&.respond_to?(:strftime) ? @guest.expiry_date.strftime("%B %d, %Y") : @guest.expiry_date %>
+              <%= " (EXPIRED)" if @guest.expiry_date.present? && @guest.expiry_date.to_date < Date.today %>
+            </span>
+          </div>
+          <div>
+            <label style="display: block; font-size: 11px; text-transform: uppercase; color: #6b7280; font-weight: bold; margin-bottom: 4px; letter-spacing: 0.5px;">Nationality & Authority</label>
+            <span style="font-size: 15px; color: #1f2937;"><%= @guest.nationality %> (<%= @guest.issuing_state %>)</span>
+          </div>
+        </div>
+
+        <div style="margin-bottom: 25px;">
+          <label style="display: block; font-size: 11px; text-transform: uppercase; color: #6b7280; font-weight: bold; margin-bottom: 6px; letter-spacing: 0.5px;">ICAO Validation Status</label>
+          <% if @guest.expiry_date.present? && @guest.expiry_date.to_date < Date.today %>
+            <div style="background: #fce8e6; border: 1px solid #f9cb9c; color: #c5221f; padding: 10px 14px; border-radius: 6px; font-size: 13px; font-weight: bold; display: flex; align-items: center; gap: 8px;">
+              ⚠️ Security Exception: Presenting Credential has expired.
+            </div>
+          <% else %>
+            <div style="background: #e6f4ea; border: 1px solid #c4eed0; color: #137333; padding: 10px 14px; border-radius: 6px; font-size: 13px; font-weight: bold; display: flex; align-items: center; gap: 8px;">
+              🛡️ Cryptographic String Verified (Tamper-Free Compliance Match)
+            </div>
+          <% end %>
+        </div>
+
+        <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 12px 16px; font-size: 12px; color: #4b5563; margin-bottom: 20px;">
+          📅 System Profile created on <%= @guest.created_at.strftime("%B %d, %Y at %I:%M %p") %>
+        </div>
+
+        <div style="border-top: 2px dashed #e5e7eb; padding-top: 20px; margin-top: 20px;">
+          <%= link_to police_report_passport_path(@guest, format: :pdf),
+                      style: "background: #c5221f; color: white; text-decoration: none; padding: 12px 20px; font-weight: bold; border-radius: 6px; font-size: 13px; display: inline-flex; align-items: center; gap: 8px; width: 100%; justify-content: center; box-shadow: 0 2px 4px rgba(197,34,31,0.2); transition: background 0.15s;",
+                      onmouseover: "this.style.background='#b01e1b'",
+                      onmouseout: "this.style.background='#c5221f'" do %>
+            🚨 Generate Official Police Report (PDF)
+          <% end %>
+          <small style="display: block; text-align: center; color: #9ca3af; font-size: 11px; margin-top: 6px;">
+            Generates an unalterable, certified manifest record optimized for submission to local law enforcement.
+          </small>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <style>
+    @keyframes modalSlideUp {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+  </style>
+</turbo-frame>

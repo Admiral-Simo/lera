@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+    @page {
+        size: A4;
+        margin: 20mm 15mm;
+        @bottom-right {
+            content: "Page " counter(page) " of " counter(pages);
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            font-size: 9pt;
+            color: #6c757d;
+        }
+        @bottom-left {
+            content: "Property Management System - Compliance Audit Manifest";
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            font-size: 9pt;
+            color: #6c757d;
+        }
+    }
+
+    body {
+        font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        color: #212529;
+        line-height: 1.5;
+        font-size: 11pt;
+        margin: 0;
+    }
+
+    .header-container {
+        border-bottom: 3px solid #1a365d;
+        padding-bottom: 12px;
+        margin-bottom: 25px;
+    }
+
+    .police-title {
+        color: #1a365d;
+        font-size: 24pt;
+        font-weight: bold;
+        margin: 0 0 5px 0;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .subtitle {
+        color: #4a5568;
+        font-size: 11pt;
+        margin: 0;
+        font-weight: 500;
+    }
+
+    .meta-box {
+        background-color: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 15px;
+        margin-bottom: 25px;
+    }
+
+    .meta-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .meta-table td {
+        padding: 4px 0;
+        font-size: 10pt;
+    }
+
+    .meta-label {
+        font-weight: bold;
+        color: #4a5568;
+        width: 25%;
+    }
+
+    .section-title {
+        font-size: 14pt;
+        color: #1a365d;
+        border-left: 5px solid #1a365d;
+        padding-left: 10px;
+        margin: 25px 0 15px 0;
+        font-weight: bold;
+        text-transform: uppercase;
+    }
+
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 25px;
+    }
+
+    .data-table th {
+        background-color: #2d3748;
+        color: #ffffff;
+        font-weight: bold;
+        text-align: left;
+        padding: 10px 12px;
+        font-size: 10pt;
+        text-transform: uppercase;
+    }
+
+    .data-table td {
+        padding: 10px 12px;
+        border-bottom: 1px solid #e2e8f0;
+        font-size: 11pt;
+    }
+
+    .data-table tr:nth-child(even) {
+        background-color: #f8fafc;
+    }
+
+    .security-badge {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-weight: bold;
+        font-size: 9.5pt;
+        background-color: #d1fae5;
+        color: #065f46;
+        border: 1px solid #a7f3d0;
+    }
+
+    .warning-badge {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-weight: bold;
+        font-size: 9.5pt;
+        background-color: #fee2e2;
+        color: #991b1b;
+        border: 1px solid #fca5a5;
+    }
+
+    .footer-signoff {
+        margin-top: 60px;
+        width: 100%;
+    }
+
+    .signoff-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .signoff-table td {
+        width: 50%;
+        padding-top: 40px;
+        text-align: center;
+        font-size: 10pt;
+        color: #4a5568;
+    }
+
+    .line {
+        border-top: 1px solid #a0aec0;
+        width: 80%;
+        margin: 0 auto 8px auto;
+    }
+</style>
+</head>
+<body>
+
+    <div class="header-container">
+        <h1 class="police-title">Identity Verification Dossier</h1>
+        <p class="subtitle">Certified Property Guest Registration Manifest • Law Enforcement Dispatch Copy</p>
+    </div>
+
+    <div class="meta-box">
+        <table class="meta-table">
+            <tr>
+                <td class="meta-label">Report Generated:</td>
+                <td><%= Time.current.strftime("%B %d, %Y at %I:%M %p") %></td>
+                <td class="meta-label">System Context:</td>
+                <td>Front Desk Hub Terminal</td>
+            </tr>
+            <tr>
+                <td class="meta-label">Record Audit ID:</td>
+                <td>REG-INC-<%= @guest.id %>-<%= SecureRandom.hex(2).upcase %></td>
+                <td class="meta-label">Document Form:</td>
+                <td>Universal ICAO Parsed Stream</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="section-title">1. Guest Demographics & Profile Log</div>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th style="width: 50%;">Field Attributes</th>
+                <th style="width: 50%;">Verified Record Value</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Last Name (Surname)</strong></td>
+                <td><%= @guest.last_name.to_s.upcase %></td>
+            </tr>
+            <tr>
+                <td><strong>Given Names</strong></td>
+                <td><%= @guest.first_names %></td>
+            </tr>
+            <tr>
+                <td><strong>Date of Birth</strong></td>
+                <td><%= @guest.birthdate&.respond_to?(:strftime) ? @guest.birthdate.strftime("%B %d, %Y") : @guest.birthdate %></td>
+            </tr>
+            <tr>
+                <td><strong>Gender / Sex</strong></td>
+                <td><%= @guest.sex %></td>
+            </tr>
+            <tr>
+                <td><strong>Assigned Location Status</strong></td>
+                <td><%= @guest.status == 'checked_in' ? "Room #{@guest.room_number}" : "Pending Assignment" %></td>
+            </tr>
+            <tr>
+                <td><strong>System Check-In Time</strong></td>
+                <td><%= @guest.checked_in_at&.respond_to?(:strftime) ? @guest.checked_in_at.strftime("%B %d, %Y at %I:%M %p") : "Not checked in yet" %></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="section-title">2. Document Security & Verification Metrics</div>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th style="width: 50%;">Credential Field</th>
+                <th style="width: 50%;">Extracted Status Value</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Document Classification</strong></td>
+                <td><%= @guest.document_type || "Identity Credential" %></td>
+            </tr>
+            <tr>
+                <td><strong>Document Number ID</strong></td>
+                <td style="font-family: monospace; font-weight: bold;"><%= @guest.document_number %></td>
+            </tr>
+            <tr>
+                <td><strong>Nationality Code</strong></td>
+                <td><%= @guest.nationality %></td>
+            </tr>
+            <tr>
+                <td><strong>Issuing Authority State</strong></td>
+                <td><%= @guest.issuing_state %></td>
+            </tr>
+            <tr>
+                <td><strong>Document Expiry Validation</strong></td>
+                <td><%= @guest.expiry_date&.respond_to?(:strftime) ? @guest.expiry_date.strftime("%B %d, %Y") : @guest.expiry_date %></td>
+            </tr>
+            <tr>
+                <td><strong>Checksum Compliance Score</strong></td>
+                <td>
+                  <% if @guest.expiry_date.present? && @guest.expiry_date.to_date < Date.today %>
+                    <span class="warning-badge">CRITICAL: EXPIRED CREDENTIAL FLAG</span>
+                  <% else %>
+                    <span class="security-badge">[PASS] ICAO Tamper-Free Verified</span>
+                  <% end %>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="footer-signoff">
+        <table class="signoff-table">
+            <tr>
+                <td>
+                    <div class="line"></div>
+                    Hotel Property Representative Signature
+                </td>
+                <td>
+                    <div class="line"></div>
+                    Receiving Officer Badge & Signature
+                </td>
+            </tr>
+        </table>
+    </div>
+
+</body>
+</html>

@@ -8,69 +8,65 @@
         <thead>
           <tr style="background: #f1f3f5; border-bottom: 2px solid #dee2e6; text-align: left; font-size: 12px; text-transform: uppercase; color: #495057;">
             <th style="padding: 12px 16px;">Guest Name</th>
-            <th style="padding: 12px 16px;">Passport Info</th>
+            <th style="padding: 12px 16px;">Document Info</th>
             <th style="padding: 12px 16px;">Origin & Identity</th>
             <th style="padding: 12px 16px;">Status / Assignment</th>
           </tr>
         </thead>
         <tbody>
           <% guests.each do |guest| %>
-            <tr style="border-bottom: 1px solid #e9ecef; font-size: 14px; vertical-align: middle;">
+            <tr style="border-bottom: 1px solid #e9ecef; font-size: 14px; vertical-align: middle; cursor: pointer; transition: background 0.15s;"
+              onclick="if(!event.target.closest('form')) { Turbo.visit('<%= passport_path(guest) %>', { frame: 'modal-layer' }) }"
+              onmouseover="this.style.backgroundColor='#f8f9fa'"
+              onmouseout="this.style.backgroundColor='transparent'">
 
               <td style="padding: 16px;">
-                <strong style="color: #212529; font-size: 15px;">
-                  <%= guest.last_name %>, <%= guest.first_names %>
-                </strong>
-                <div style="font-size: 12px; color: #6c757d; margin-top: 4px;">
-                  Born: <%= guest.birthdate&.strftime("%b %d, %Y") || guest.birthdate %> •
-                  <span style="font-weight: 500;"><%= guest.sex %></span>
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                  <strong style="color: #212529; font-size: 15px;">
+                    <%= guest.last_name %>, <%= guest.first_names %>
+                  </strong>
+                  <span style="font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 4px; border: 1px solid #ced4da; background: <%= guest.document_type == 'Passport' ? '#fff7ed' : '#f0fdf4' %>; color: <%= guest.document_type == 'Passport' ? '#c2410c' : '#166534' %>;">
+                    <%= guest.document_type || "Document" %>
+                  </span>
+                </div>
+                <div style="font-size: 12px; color: #6c757d;">
+                  Born: <%= guest.birthdate&.class == Date ? guest.birthdate.strftime("%b %d, %Y") : guest.birthdate %> • <span><%= guest.sex %></span>
                 </div>
               </td>
 
               <td style="padding: 16px;">
-                <div style="font-family: monospace; font-size: 14px; font-weight: bold; color: #212529; letter-spacing: 0.5px;">
-                  <%= guest.document_number %>
-                </div>
+                <div style="font-family: monospace; font-size: 14px; font-weight: bold; color: #212529; letter-spacing: 0.5px;"><%= guest.document_number %></div>
                 <div style="font-size: 11px; color: #6c757d; margin-top: 2px;">
-                  Expires: <%= guest.expiry_date&.strftime("%b %d, %Y") || guest.expiry_date %>
-                </div>
-
-                <div style="margin-top: 6px;">
-                  <% if guest.expiry_date.to_date < Date.today %>
-                    <span style="font-size: 10px; font-family: system-ui; padding: 2px 6px; border-radius: 4px; font-weight: bold; background: #fce8e6; color: #c5221f;">
-                      ⚠️ Document Expired
-                    </span>
-                  <% else %>
-                    <span style="font-size: 10px; font-family: system-ui; padding: 2px 6px; border-radius: 4px; font-weight: bold; background: #e6f4ea; color: #137333; display: inline-flex; align-items: center; gap: 4px;">
-                      🛡️ ICAO Checksum Verified
-                    </span>
-                  <% end %>
-                </div>
+                  Expires: <%= guest.expiry_date&.class == Date ? guest.expiry_date.strftime("%b %d, %Y") : guest.expiry_date %>
+              </div>
+              <div style="margin-top: 6px;">
+                <% if guest.expiry_date.to_date < Date.today %>
+                  <span style="font-size: 10px; font-weight: bold; background: #fce8e6; color: #c5221f; padding: 2px 6px; border-radius: 4px;">⚠️ Document Expired</span>
+                <% else %>
+                  <span style="font-size: 10px; font-weight: bold; background: #e6f4ea; color: #137333; padding: 2px 6px; border-radius: 4px;">🛡️ ICAO Checksum Verified</span>
+                <% end %>
+              </div>
               </td>
 
               <td style="padding: 16px;">
-                <span style="background: #f8f9fa; border: 1px solid #ced4da; padding: 4px 8px; border-radius: 4px; font-weight: 600; font-size: 12px; color: #495057;">
-                  <%= guest.nationality %>
-                </span>
-                <div style="font-size: 11px; color: #6c757d; margin-top: 6px;">
-                  Authority: <%= guest.issuing_state %>
-                </div>
+                <span style="background: #f8f9fa; border: 1px solid #ced4da; padding: 4px 8px; border-radius: 4px; font-weight: 600; font-size: 12px; color: #495057;"><%= guest.nationality %></span>
+                <div style="font-size: 11px; color: #6c757d; margin-top: 6px;">Authority: <%= guest.issuing_state %></div>
               </td>
 
               <td style="padding: 16px;">
                 <% if guest.status == "pending" %>
                   <%= form_with url: passport_path(guest), method: :patch, local: false, style: "display: flex; gap: 8px; align-items: center;" do |f| %>
                     <%= f.text_field :room_number, placeholder: "Room #", required: true, style: "width: 75px; padding: 6px 8px; border: 1px solid #ced4da; border-radius: 4px; font-size: 13px; font-weight: 500;" %>
-                    <%= f.submit "Check In", style: "background: #1a73e8; color: white; border: none; padding: 7px 14px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px; transition: background 0.2s;" %>
+                    <%= f.submit "Check In", style: "background: #1a73e8; color: white; border: none; padding: 7px 14px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px;" %>
                   <% end %>
                 <% else %>
                   <div style="background: #eaf2ff; color: #1a73e8; padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: bold; display: inline-block; border: 1px solid #d2e3fc;">
                     🚪 Room <%= guest.room_number %>
-                  </div>
-                  <div style="font-size: 10px; color: #6c757d; margin-top: 5px; font-weight: 500;">
-                    Checked in: <%= guest.checked_in_at&.strftime("%I:%M %p") %>
-                  </div>
-                <% end %>
+                </div>
+                <div style="font-size: 10px; color: #6c757d; margin-top: 5px; font-weight: 500;">
+                  Checked in: <%= guest.checked_in_at&.strftime("%I:%M %p") %>
+              </div>
+            <% end %>
               </td>
 
             </tr>
@@ -81,7 +77,7 @@
       <div style="border: 2px dashed #dee2e6; border-radius: 8px; padding: 50px 20px; text-align: center; color: #adb5bd; background: #fafafa;">
         <div style="font-size: 32px; margin-bottom: 10px;">🛎️</div>
         <strong style="color: #495057; display: block; margin-bottom: 4px;">No Active Deliveries or Check-ins</strong>
-        <span style="font-size: 13px;">Scan an arrival document on the left sidebar panel to begin registration processing.</span>
+        <span style="font-size: 13px;">Scan a passport or ID document on the left sidebar panel to begin processing.</span>
       </div>
     <% end %>
   </div>

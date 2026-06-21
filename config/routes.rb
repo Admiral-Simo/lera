@@ -12,6 +12,11 @@ Rails.application.routes.draw do
   # Defines the root path route ("/")
   # root "posts#index"
   ## config/routes.rb
-  resources :passports, only: [:new, :create, :update]
+  # config/routes.rb
+  resources :passports, only: [:new, :create, :update, :show] do
+    member do
+      get :police_report # 🚀 Creates path helper: police_report_passport_path(guest)
+    end
+  end
   root "passports#new"
 end

@@ -53,18 +53,39 @@ class PassportOcrService
     if full_text
       mrz_lines = extract_mrz_lines(full_text)
 
-      # Ensure we successfully isolated both required MRZ lines
-      return nil unless mrz_lines.size == 2
+      # Ensure we successfully isolated required MRZ lines (2 for Passport/TD2, 3 for TD1 ID Cards)
+      return nil unless [2, 3].include?(mrz_lines.size)
 
       begin
-        # Pass the self-healed, 44-character strings to the parser gem
+        # Pass the self-healed character strings to the parser gem
         result = MRZ.parse(mrz_lines)
+
+        # 🚀 BULLETPROOF STRUCTURAL EXTRACTION FOR MOROCCAN ID CARDS
+        doc_num = result.document_number
+        if result.nationality == "MAR"
+          # Find the identity line containing the country indicator code
+          idmar_line = mrz_lines.find { |line| line.include?("MAR") && line.include?("<") }
+
+          if idmar_line
+            # Split by the separator bracket.
+            # Part 0: "IDMAROPI4JV82", Part 1: "9I776494<<<<<<<<"
+            parts = idmar_line.split("<")
+            if parts[1].present?
+              # Drop the first digit (the check digit '9') and strip any trailing arrow buffers
+              raw_id = parts[1][1..-1].gsub("<", "")
+
+              # Normalize common OCR typos (e.g., if 'I' was scanned as a '1')
+              doc_num = raw_id.gsub(/^1/, "I") if raw_id.start_with?("1") || raw_id.start_with?("I")
+            end
+          end
+        end
 
         {
           raw_mrz: mrz_lines,
+          document_type: format_doc_type(mrz_lines.first),
           first_names: result.first_name,
           last_name: result.last_name,
-          document_number: result.document_number,
+          document_number: doc_num,
           nationality: result.nationality,
           issuing_state: result.issuing_state,
           sex: format_sex(result.sex),
@@ -83,21 +104,19 @@ class PassportOcrService
   private
 
   # 🛠️ ALGORITHMIC PRE-PROCESSING LAYER
-  # Converts the image to grayscale and applies an Adaptive Threshold matrix.
-  # This destroys shadow lines locally, rendering text crisp black on pure white backgrounds.
   def enhance_image_for_ocr(source_path)
     ImageProcessing::MiniMagick
       .source(source_path)
       .loader(page: 0)
       .colorspace("Gray")
       .negate
-      .lat("25x25+10%") # Local Adaptive Threshold (clears shadows within a localized window)
+      .lat("25x25+10%")
       .negate
       .contrast_stretch("2%x98%")
-      .call # Returns a natively managed File object mapping cleanly to .path
+      .call
   end
 
-  # 🗜️ STRING EXTRACTION & TRUNCATION SELF-HEALING ENGINE
+  # 🗜️ UNIVERSAL STRING EXTRACTION ENGINE
   def extract_mrz_lines(text)
     lines = text.split("\n")
     mrz_lines = []
@@ -105,30 +124,42 @@ class PassportOcrService
     lines.each do |line|
       cleaned = line.gsub(/\s+/, "").upcase
 
-      # Target Line 1 (starts with P<) or Line 2 (contains concentrated passport padding blocks)
-      if cleaned.start_with?("P<") || (cleaned.match?(/[A-Z0-9<]{25,}/) && cleaned.include?("<<<"))
+      if cleaned.match?(/[A-Z0-9<]{25,}/) && (cleaned.include?("<<<") || cleaned.start_with?("P<", "I<", "C<", "A<") || cleaned.end_with?("<<"))
         mrz_lines << cleaned
       end
     end
 
-    # Isolate top 2 distinct candidate lines
-    mrz_lines = mrz_lines.uniq.first(2)
-    return [] unless mrz_lines.size == 2
+    mrz_lines = mrz_lines.uniq
 
-    mrz_lines.map do |line|
-      if line.length < 44
-        # Self-Heal: Pad out truncated text to the precise 44-character ICAO standard
-        line.ljust(44, "<")
+    target_size = mrz_lines.any? { |l| l.length <= 32 } ? 3 : 2
+    selected_lines = mrz_lines.first(target_size)
+
+    return [] unless selected_lines.size == target_size
+
+    expected_length = selected_lines.first.length <= 32 ? 30 : (selected_lines.first.length <= 38 ? 36 : 44)
+
+    selected_lines.map do |line|
+      cleaned_line = line[0..(expected_length - 1)]
+      if cleaned_line.length < expected_length
+        cleaned_line.ljust(expected_length, "<")
       else
-        line[0..43]
+        cleaned_line
       end
     end
   end
 
+  def format_doc_type(first_line)
+    case first_line[0]
+    when "P" then "Passport"
+    when "I", "C", "A" then "ID Card"
+    else "Identity Document"
+    end
+  end
+
   def format_sex(sex_symbol)
-    case sex_symbol
-    when :male then "Male"
-    when :female then "Female"
+    case sex_symbol.to_s.upcase
+    when "M", "MALE" then "Male"
+    when "F", "FEMALE" then "Female"
     else "Other/Unspecified"
     end
   end
