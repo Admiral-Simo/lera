@@ -1,17 +1,68 @@
-<h3>Extraction Output</h3>
+<h3>Extracted Information</h3>
 
-<% if local_assigns[:mrz_lines].present? %>
-  <p style="color: #2b7a4b; font-size: 14px; font-weight: bold;">✓ 2 Lines Isolated Successfully</p>
-  <div style="background: #212529; color: #f8f9fa; padding: 20px; border-radius: 6px; font-family: monospace; font-size: 15px; letter-spacing: 1px; overflow-x: auto; box-shadow: inset 0 0 10px rgba(0,0,0,0.5);">
-    <% mrz_lines.each_with_index do |line, idx| %>
-      <div style="margin-bottom: 8px;">
-        <span style="color: #6c757d; user-select: none; margin-right: 10px;"><%= idx + 1 %></span><%= line %>
+<% if local_assigns[:passport_data].present? %>
+  <p style="color: #2b7a4b; font-size: 14px; font-weight: bold; margin-bottom: 20px;">✓ Identity Metadata Parsed</p>
+
+  <div style="background: white; border: 1px solid #dee2e6; border-radius: 8px; padding: 24px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); margin-bottom: 25px;">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+
+      <div>
+        <label style="display: block; font-size: 11px; text-transform: uppercase; color: #6c757d; font-weight: bold; margin-bottom: 4px;">First Names</label>
+        <span style="font-size: 16px; font-weight: 600; color: #212529;"><%= passport_data[:first_names] || "—" %></span>
       </div>
-    <% end %>
+
+      <div>
+        <label style="display: block; font-size: 11px; text-transform: uppercase; color: #6c757d; font-weight: bold; margin-bottom: 4px;">Last Name</label>
+        <span style="font-size: 16px; font-weight: 600; color: #212529;"><%= passport_data[:last_name] || "—" %></span>
+      </div>
+
+      <div>
+        <label style="display: block; font-size: 11px; text-transform: uppercase; color: #6c757d; font-weight: bold; margin-bottom: 4px;">Document Number</label>
+        <span style="font-size: 16px; font-weight: 600; font-family: monospace; color: #212529;"><%= passport_data[:document_number] %></span>
+      </div>
+
+      <div>
+        <label style="display: block; font-size: 11px; text-transform: uppercase; color: #6c757d; font-weight: bold; margin-bottom: 4px;">Sex</label>
+        <span style="font-size: 16px; font-weight: 600; color: #212529;"><%= passport_data[:sex] %></span>
+      </div>
+
+      <div>
+        <label style="display: block; font-size: 11px; text-transform: uppercase; color: #6c757d; font-weight: bold; margin-bottom: 4px;">Date of Birth</label>
+        <span style="font-size: 16px; font-weight: 600; color: #212529;"><%= passport_data[:birthdate] %></span>
+      </div>
+
+      <div>
+        <label style="display: block; font-size: 11px; text-transform: uppercase; color: #6c757d; font-weight: bold; margin-bottom: 4px;">Expiry Date</label>
+        <span style="font-size: 16px; font-weight: 600; color: <%= Date.parse(passport_data[:expiry_date]) < Date.today ? '#c5221f' : '#212529' %>;">
+          <%= passport_data[:expiry_date] %>
+          <% if Date.parse(passport_data[:expiry_date]) < Date.today %> (Expired)<% end %>
+        </span>
+      </div>
+
+      <div>
+        <label style="display: block; font-size: 11px; text-transform: uppercase; color: #6c757d; font-weight: bold; margin-bottom: 4px;">Nationality (Code)</label>
+        <span style="font-size: 16px; font-weight: 600; color: #212529;"><%= passport_data[:nationality] %></span>
+      </div>
+
+      <div>
+        <label style="display: block; font-size: 11px; text-transform: uppercase; color: #6c757d; font-weight: bold; margin-bottom: 4px;">Issuing Authority</label>
+        <span style="font-size: 16px; font-weight: 600; color: #212529;"><%= passport_data[:issuing_state] %></span>
+      </div>
+
+    </div>
   </div>
-  <p style="font-size: 12px; color: #6c757d; margin-top: 10px;">Ready to be forwarded into your core validation parser.</p>
+
+  <details>
+    <summary style="font-size: 13px; color: #0d6efd; cursor: pointer; user-select: none; margin-bottom: 10px;">View Raw Scanned MRZ Source String</summary>
+    <div style="background: #212529; color: #f8f9fa; padding: 16px; border-radius: 6px; font-family: monospace; font-size: 13px; letter-spacing: 1px; overflow-x: auto;">
+      <% passport_data[:raw_mrz].each do |line| %>
+        <div><%= line %></div>
+      <% end %>
+    </div>
+  </details>
+
 <% else %>
-  <div style="border: 2px dashed #dee2e6; border-radius: 6px; height: 160px; display: flex; align-items: center; justify-content: center; color: #adb5bd; text-align: center;">
-    Upload a valid image file on the left<br>to view extracted OCR results.
+  <div style="border: 2px dashed #dee2e6; border-radius: 6px; height: 200px; display: flex; align-items: center; justify-content: center; color: #adb5bd; text-align: center;">
+    Upload an image file on the left<br>to view structured identity data.
   </div>
 <% end %>

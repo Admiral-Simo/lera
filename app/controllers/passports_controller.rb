@@ -1,29 +1,29 @@
 # app/controllers/passports_controller.rb
 class PassportsController < ApplicationController
   def new
-    @mrz_lines = []
+    @passport_data = nil
   end
 
   def create
     if params[:passport].present? && params[:passport][:image].present?
       uploaded_file = params[:passport][:image]
-      @mrz_lines = PassportOcrService.new(uploaded_file.tempfile.path).call
 
-      if @mrz_lines.any?
-        flash.now[:notice] = "Passport scanned successfully!"
+      # Now returns the fully parsed metadata payload hash
+      @passport_data = PassportOcrService.new(uploaded_file.tempfile.path).call
+
+      if @passport_data
+        flash.now[:notice] = "Passport details extracted successfully!"
       else
-        flash.now[:alert] = "Could not find any valid MRZ lines in that image."
+        flash.now[:alert] = "Could not find or parse standard Passport MRZ fields."
       end
     else
       flash.now[:alert] = "Please select an image file first."
-      @mrz_lines = []
     end
 
     respond_to do |format|
       format.turbo_stream do
         render turbo_stream: [
-          turbo_stream.update("results-output", partial: "results", locals: { mrz_lines: @mrz_lines }),
-          # 🚀 FIX: Pass an inline block template to render flash partial styles cleanly
+          turbo_stream.update("results-output", partial: "results", locals: { passport_data: @passport_data }),
           turbo_stream.update("flash-messages", partial: "passports/flashes")
         ]
       end
