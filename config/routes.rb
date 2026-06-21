@@ -12,6 +12,6 @@ Rails.application.routes.draw do
   # Defines the root path route ("/")
   # root "posts#index"
   ## config/routes.rb
-  resources :passports, only: [:new, :create]
+  resources :passports, only: [:new, :create, :update]
   root "passports#new"
 end

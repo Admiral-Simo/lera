@@ -1,0 +1,27 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  first_names: MyString
+  last_name: MyString
+  document_number: MyString
+  sex: MyString
+  birthdate: 2026-06-21
+  expiry_date: 2026-06-21
+  nationality: MyString
+  issuing_state: MyString
+  room_number: MyString
+  checked_in_at: 2026-06-21 13:35:37
+  status: MyString
+
+two:
+  first_names: MyString
+  last_name: MyString
+  document_number: MyString
+  sex: MyString
+  birthdate: 2026-06-21
+  expiry_date: 2026-06-21
+  nationality: MyString
+  issuing_state: MyString
+  room_number: MyString
+  checked_in_at: 2026-06-21 13:35:37
+  status: MyString

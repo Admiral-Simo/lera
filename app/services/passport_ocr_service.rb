@@ -2,6 +2,8 @@
 require "net/http"
 require "json"
 require "base64"
+require "mrz"                         # Battle-tested parsing gem
+require "image_processing/mini_magick" # Image preprocessing engine
 
 class PassportOcrService
   def initialize(file_path)
@@ -11,13 +13,19 @@ class PassportOcrService
   def call
     return nil unless File.exist?(@file_path)
 
+    # 1. Preprocess the image to flatten ambient shadows and isolate text
+    processed_file = enhance_image_for_ocr(@file_path)
+    return nil if processed_file.nil?
+
+    # 2. Authenticate using environment variable or local fallback
     access_token = ENV["GOOGLE_CLOUD_ACCESS_TOKEN"] || `gcloud auth application-default print-access-token`.strip
     return nil if access_token.empty?
 
-    uri = URI("https://vision.googleapis.com/v1/images:annotate")
-    image_bytes = File.binread(@file_path)
+    # 3. Read the ENHANCED image bytes instead of the shadow-heavy original file
+    image_bytes = File.binread(processed_file.path)
     base64_image = Base64.strict_encode64(image_bytes)
 
+    uri = URI("https://vision.googleapis.com/v1/images:annotate")
     payload = {
       requests: [{
         image: { content: base64_image },
@@ -34,6 +42,9 @@ class PassportOcrService
       http.request(request)
     end
 
+    # 4. Clean up the generated enhanced file from disk safely
+    File.delete(processed_file.path) if File.exist?(processed_file.path)
+
     return nil unless response.code == "200"
 
     json_body = JSON.parse(response.body)
@@ -41,7 +52,29 @@ class PassportOcrService
 
     if full_text
       mrz_lines = extract_mrz_lines(full_text)
-      mrz_lines.size == 2 ? decode_mrz(mrz_lines) : nil
+
+      # Ensure we successfully isolated both required MRZ lines
+      return nil unless mrz_lines.size == 2
+
+      begin
+        # Pass the self-healed, 44-character strings to the parser gem
+        result = MRZ.parse(mrz_lines)
+
+        {
+          raw_mrz: mrz_lines,
+          first_names: result.first_name,
+          last_name: result.last_name,
+          document_number: result.document_number,
+          nationality: result.nationality,
+          issuing_state: result.issuing_state,
+          sex: format_sex(result.sex),
+          birthdate: result.birth_date.to_s,     # Clean standard format: "YYYY-MM-DD"
+          expiry_date: result.expiration_date.to_s,
+          valid_checksums?: result.valid?        # Global safety checksum pass/fail
+        }
+      rescue MRZ::InvalidFormatError
+        nil
+      end
     else
       nil
     end
@@ -49,73 +82,54 @@ class PassportOcrService
 
   private
 
+  # 🛠️ ALGORITHMIC PRE-PROCESSING LAYER
+  # Converts the image to grayscale and applies an Adaptive Threshold matrix.
+  # This destroys shadow lines locally, rendering text crisp black on pure white backgrounds.
+  def enhance_image_for_ocr(source_path)
+    ImageProcessing::MiniMagick
+      .source(source_path)
+      .loader(page: 0)
+      .colorspace("Gray")
+      .negate
+      .lat("25x25+10%") # Local Adaptive Threshold (clears shadows within a localized window)
+      .negate
+      .contrast_stretch("2%x98%")
+      .call # Returns a natively managed File object mapping cleanly to .path
+  end
+
+  # 🗜️ STRING EXTRACTION & TRUNCATION SELF-HEALING ENGINE
   def extract_mrz_lines(text)
-    mrz_pattern = /[A-Z0-9<]{44}/i
     lines = text.split("\n")
-    mrz_lines = lines.select { |line| line.gsub(/\s+/, "").match?(mrz_pattern) }
-    mrz_lines.map { |line| line.gsub(/\s+/, "").upcase }
-  end
+    mrz_lines = []
 
-  # Strictly parses the standard TD3 Format (International Passports)
-  def decode_mrz(lines)
-    line1 = lines[0]
-    line2 = lines[1]
+    lines.each do |line|
+      cleaned = line.gsub(/\s+/, "").upcase
 
-    # Line 1 Breakdown
-    issuing_state = line1[2..4].tr("<", "")
+      # Target Line 1 (starts with P<) or Line 2 (contains concentrated passport padding blocks)
+      if cleaned.start_with?("P<") || (cleaned.match?(/[A-Z0-9<]{25,}/) && cleaned.include?("<<<"))
+        mrz_lines << cleaned
+      end
+    end
 
-    # Names are separated by << (Primary vs Secondary identifiers)
-    name_part = line1[5..43]
-    primary_id, secondary_id = name_part.split("<<")
-    last_name = primary_id&.gsub("<", " ")&.strip
-    first_names = secondary_id&.gsub("<", " ")&.strip
+    # Isolate top 2 distinct candidate lines
+    mrz_lines = mrz_lines.uniq.first(2)
+    return [] unless mrz_lines.size == 2
 
-    # Line 2 Breakdown
-    doc_number = line2[0..8].tr("<", "")
-    nationality = line2[10..12].tr("<", "")
-
-    raw_dob = line2[13..18]   # YYMMDD
-    raw_sex = line2[20]       # M / F / X
-    raw_expiry = line2[21..26] # YYMMDD
-
-    {
-      raw_mrz: lines,
-      first_names: first_names,
-      last_name: last_name,
-      document_number: doc_number,
-      nationality: nationality,
-      issuing_state: issuing_state,
-      sex: parse_sex(raw_sex),
-      birthdate: format_mrz_date(raw_dob, birthdate: true),
-      expiry_date: format_mrz_date(raw_expiry)
-    }
-  end
-
-  def parse_sex(char)
-    case char
-    when "M" then "Male"
-    when "F" then "Female"
-    else "Other/Unspecified"
+    mrz_lines.map do |line|
+      if line.length < 44
+        # Self-Heal: Pad out truncated text to the precise 44-character ICAO standard
+        line.ljust(44, "<")
+      else
+        line[0..43]
+      end
     end
   end
 
-  def format_mrz_date(str, birthdate: false)
-    return "Unknown" unless str&.match?(/\d{6}/)
-
-    yy = str[0..1].to_i
-    mm = str[2..3]
-    dd = str[4..5]
-
-    # Smooth century threshold calculation
-    current_year = 2026
-    current_yy = current_year % 100
-
-    century = if birthdate
-                yy > current_yy ? "19" : "20"
-              else
-                yy <= (current_yy + 50) ? "20" : "19"
-              end
-
-    "#{century}#{yy}-#{mm}-#{dd}"
+  def format_sex(sex_symbol)
+    case sex_symbol
+    when :male then "Male"
+    when :female then "Female"
+    else "Other/Unspecified"
+    end
   end
 end
