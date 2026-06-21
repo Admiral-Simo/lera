@@ -1,0 +1,54 @@
+<div style="max-width: 1200px; margin: 40px auto; font-family: system-ui, sans-serif; padding: 0 20px;">
+  <h2>🛂 Passport Data Extractor</h2>
+  <hr style="border: nil; border-top: 1px solid #eee; margin-bottom: 30px;">
+
+  <div id="flash-messages">
+    <%= render partial: "passports/flashes" %>
+  </div>
+
+  <div style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 40px;">
+
+    <div style="background: #f8f9fa; padding: 24px; border-radius: 8px; border: 1px solid #e9ecef; height: fit-content;">
+      <h3>Upload Document</h3>
+      <p style="color: #6c757d; font-size: 14px;">Select a compressed passport photo to extract machine-readable text asynchronously.</p>
+
+      <%= form_with scope: :passport, url: passports_path, local: true, multipart: true,
+                    html: {
+                      onsubmit: "document.getElementById('loading-state').style.display = 'block'; document.getElementById('results-output').style.opacity = '0.3';",
+                      id: "passport-form"
+                    } do |f| %>
+        <div style="margin-bottom: 20px;">
+          <%= f.file_field :image, accept: 'image/png, image/jpeg, image/jpg', style: "display: block; width: 100%; padding: 10px; background: white; border: 1px dashed #ced4da; border-radius: 4px;" %>
+        </div>
+        <%= f.submit "Analyze Passport Photo", style: "background: #0d6efd; color: white; border: none; padding: 12px 20px; font-weight: bold; border-radius: 4px; cursor: pointer; width: 100%;" %>
+      <% end %>
+
+      <div id="loading-state" style="display: none; margin-top: 20px; text-align: center; color: #0d6efd; font-weight: bold; font-size: 14px;">
+        <div class="spinner" style="border: 3px solid #f3f3f3; border-top: 3px solid #0d6efd; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; margin: 0 auto 10px auto;"></div>
+        Analyzing image via Google Vision...
+      </div>
+    </div>
+
+    <div id="results-output">
+      <%= render partial: "results", locals: { mrz_lines: @mrz_lines } %>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // 🚀 TURN OFF SPINNER AUTOMATICALLY WHEN RESPONSE ARRIVES
+  document.addEventListener("turbo:submit-end", function(event) {
+    if (event.target.id === "passport-form") {
+      document.getElementById('loading-state').style.display = 'none';
+      document.getElementById('results-output').style.opacity = '1.0';
+    }
+  });
+</script>
+
+<style>
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+</style>

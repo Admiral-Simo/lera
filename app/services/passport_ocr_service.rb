@@ -1,50 +1,54 @@
-require "google/cloud/vision"
+# app/services/passport_ocr_service.rb
+require "net/http"
+require "json"
+require "base64"
 
 class PassportOcrService
   def initialize(file_path)
-    @file_path = file_path
-
-    @client = Google::Cloud::Vision.image_annotator do |config|
-      config.credentials = gcp_credentials if gcp_credentials.present?
-
-      # 🚀 This passes arguments straight to the underlying gRPC sub-channel
-      # to stop it from deadlocking on macOS background sockets
-      config.channel_args = {
-        "grpc.dns_min_time_between_resolutions_ms" => 10000,
-        "grpc.max_connection_backoff_ms" => 1000
-      }
-    end
+    @file_path = file_path.to_s
   end
 
   def call
-    response = @client.text_detection(image: @file_path)
-    full_text = response.responses.first&.text_annotations&.first&.description
+    return [] unless File.exist?(@file_path)
 
-    return nil if full_text.blank?
+    # In production, use your environment credentials. In local dev, fallback to gcloud CLI token.
+    access_token = ENV["GOOGLE_CLOUD_ACCESS_TOKEN"] || `gcloud auth application-default print-access-token`.strip
+    return [] if access_token.empty?
 
-    parse_mrz(full_text)
-  end
+    uri = URI("https://vision.googleapis.com/v1/images:annotate")
+    image_bytes = File.binread(@file_path)
+    base64_image = Base64.strict_encode64(image_bytes)
 
-  private
+    payload = {
+      requests: [{
+        image: { content: base64_image },
+        features: [{ type: "TEXT_DETECTION" }]
+      }]
+    }.to_json
 
-  def gcp_credentials
-    # In development, fallback to nil so it uses your local `gcloud` CLI auth automatically
-    return nil if Rails.env.development?
+    response = Net::HTTP.start(uri.host, uri.port, use_ssl: true) do |http|
+      request = Net::HTTP::Post.new(uri)
+      request["Authorization"] = "Bearer #{access_token}"
+      request["Content-Type"] = "application/json"
+      request["X-Goog-User-Project"] = "passportscanner98123"
+      request.body = payload
+      http.request(request)
+    end
 
-    gcp_key = Rails.application.credentials.dig(:google, :gcp_key)
-    JSON.parse(gcp_key) if gcp_key.present?
+    return [] unless response.code == "200"
+
+    json_body = JSON.parse(response.body)
+    full_text = json_body.dig("responses", 0, "textAnnotations", 0, "description")
+
+    full_text ? parse_mrz(full_text) : []
   end
 
   private
 
   def parse_mrz(text)
-    # Added the 'i' flag at the end: /[A-Z0-9<]{44}/i
     mrz_pattern = /[A-Z0-9<]{44}/i
-
     lines = text.split("\n")
     mrz_lines = lines.select { |line| line.gsub(/\s+/, "").match?(mrz_pattern) }
-
-    # Strip spaces and convert back to uppercase so the MRZ gem can parse it later
     mrz_lines.map { |line| line.gsub(/\s+/, "").upcase }
   end
 end
