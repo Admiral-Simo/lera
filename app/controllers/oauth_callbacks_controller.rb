@@ -8,10 +8,7 @@ class OauthCallbacksController < ApplicationController
 
     if user.persisted?
       # Start a new session (Adapting to your existing Rails 8 sessions schema)
-      session_record = user.sessions.create!(
-        ip_address: request.remote_ip,
-        user_agent: request.user_agent
-      )
+      session_record = user.sessions.create!
       cookies.signed.permanent[:session_id] = session_record.id
 
       redirect_to root_path, notice: "Successfully authenticated via Google!"

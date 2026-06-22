@@ -9,5 +9,7 @@ class Session < ApplicationRecord
 
   def assign_metadata
     # Uses Rails Current attributes or controller context hooks if available
+    self.ip_address = Current.ip_address
+    self.user_agent = Current.user_agent
   end
 end
