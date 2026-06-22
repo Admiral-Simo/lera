@@ -11,6 +11,7 @@ class User < ApplicationRecord
   def self.from_omniauth(auth)
     where(provider: auth.provider, uid: auth.uid).first_or_create do |user|
       user.email_address = auth.info.email
+      user.profile_pic = auth.info.image
     end
   end
 end
